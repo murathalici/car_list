@@ -61,7 +61,7 @@ class CarMakesModelsSelectList {
    */
   public function fetchCarMakes(): array {
     // Get endpoint from config, or default to a hardcoded value.
-    $endpoint = $this->configFactory->get('cars_list.settings')->get('base_api_endpoint') ?? 'getallmakes?format=json';
+    $endpoint = 'getallmakes?format=json';
     return $this->apiRequest($endpoint, 'Make_Name');
   }
 
@@ -69,9 +69,7 @@ class CarMakesModelsSelectList {
    * Fetch car models for a given make and return them as an array.
    */
   public function fetchCarModels(string $make): array {
-    // Construct the endpoint dynamically based on the given car make.
-    $endpointFormat = $this->configFactory->get('cars_list.settings')->get('model_api_endpoint_format') ?? 'getmodelsformake/%s?format=json';
-    $endpoint = sprintf($endpointFormat, urlencode($make));
+    $endpoint = sprintf('getmodelsformake/%s?format=json', urlencode($make));
 
     $models = $this->apiRequest($endpoint, 'Model_Name');
 
@@ -92,7 +90,7 @@ class CarMakesModelsSelectList {
    *   The extracted data from the API or an empty array in case of failures.
    */
   private function apiRequest(string $endpoint, string $key): array {
-    $baseApiUrl = $this->configFactory->get('cars_list.settings')->get('base_api_url') ?? 'https://vpic.nhtsa.dot.gov/api/vehicles/';
+    $baseApiUrl = $this->configFactory->get('cars_list.settings')->get('endpoint') ?? 'https://vpic.nhtsa.dot.gov/api/vehicles/';
     $url = $baseApiUrl . $endpoint;
 
     // Generate a cache ID from the URL.
