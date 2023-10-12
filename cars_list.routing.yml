@@ -1,0 +1,8 @@
+cars_list.admin_settings:
+  path: '/admin/config/cars-list/settings'
+  defaults:
+    _form: '\Drupal\cars_list\Form\CarsListSettingsForm'
+    _title: 'Cars List Settings'
+  requirements:
+    _permission: 'administer site configuration'
+  _admin_route: TRUE

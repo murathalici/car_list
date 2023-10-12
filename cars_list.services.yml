@@ -1,0 +1,4 @@
+services:
+  cars_list.car_makes_models_select_list:
+    class: Drupal\cars_list\CarMakesModelsSelectList
+    arguments: ['@http_client', '@logger.factory', '@cache.default', '@config.factory']

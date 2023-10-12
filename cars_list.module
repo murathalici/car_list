@@ -1,0 +1,83 @@
+<?php
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter() for car forms.
+ */
+function cars_list_form_alter(array &$form, FormStateInterface $form_state, string $form_id): void {
+    // Target only the car node creation and edit forms.
+    if (!in_array($form_id, ['node_car_form', 'node_car_edit_form'])) {
+        return;
+    }
+
+    // Setup AJAX behavior for the "Make" field.
+    $form['field_car_make']['widget']['#ajax'] = [
+        'callback' => 'cars_list_make_changed_callback',
+        'wrapper' => 'edit-field-car-model-wrapper',
+    ];
+
+    // Wrap the "Model" field with a div to facilitate AJAX replacement.
+    $form['field_car_model']['#prefix'] = '<div id="edit-field-car-model-wrapper">';
+    $form['field_car_model']['#suffix'] = '</div>';
+
+    // If editing an existing node, pre-populate the "Model" options based on current "Make" value.
+    if ($form_id === 'node_car_edit_form') {
+        $current_make_value = $form['field_car_make']['widget']['#default_value'][0] ?? NULL;
+        updateModelOptions($form, $current_make_value);
+
+        // Set the default value for the "Model" field based on its saved value.
+        $node = $form_state->getFormObject()->getEntity();
+        $current_model_value = $node->get('field_car_model')->getValue();
+        if (!empty($current_model_value)) {
+            $form['field_car_model']['widget']['#default_value'] = $current_model_value[0]['value'];
+        }
+    }
+
+    // Add a custom validation handler.
+    $form['#validate'][] = 'cars_list_custom_car_node_validation';
+}
+
+/**
+ * Helper function to update the "Model" options based on the selected "Make".
+ */
+function updateModelOptions(array &$form, $selected_make_value): void {
+  if ($selected_make_value && isset($form['field_car_make']['widget']['#options'][$selected_make_value])) {
+      $selected_make_label = strtolower($form['field_car_make']['widget']['#options'][$selected_make_value]);
+      $models_array = \Drupal\cars_list\CarMakesModelsSelectListWrapper::carModels($selected_make_label);
+
+      // Convert the list of models into an associative array where keys match labels.
+      $models = [];
+      foreach ($models_array as $model) {
+          $models[$model] = $model;
+      }
+
+      $form['field_car_model']['widget']['#options'] = $models;
+  }
+}
+
+/**
+ * AJAX callback to update the "Model" field based on the selected "Make".
+ */
+function cars_list_make_changed_callback(array &$form, FormStateInterface $form_state): array {
+    $selected_make_value = $form_state->getValue('field_car_make')[0]['value'] ?? null;
+    updateModelOptions($form, $selected_make_value);
+    return $form['field_car_model'];
+}
+
+/**
+ * Custom validation to clear any errors related to the "Model" field.
+ */
+function cars_list_custom_car_node_validation($form, FormStateInterface $form_state): void {
+  // If there's an error on the "Model" field, remove it.
+  $errors = $form_state->getErrors();
+  if (isset($errors['field_car_model'])) {
+    $form_state->clearErrors();
+    // Re-apply any other errors excluding the one for "Model" field.
+    foreach ($errors as $name => $error) {
+      if ($name != 'field_car_model') {
+        $form_state->setErrorByName($name, $error);
+      }
+    }
+  }
+}
